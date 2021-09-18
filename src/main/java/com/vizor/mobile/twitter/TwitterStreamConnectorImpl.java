@@ -7,6 +7,7 @@ import java.util.function.Consumer;
 public class TwitterStreamConnectorImpl implements TwitterStreamConnector{
 
     private final static String URL_STREAM = "https://api.twitter.com/2/tweets/search/stream";
+    private final static String URL_GET_TOKEN = "https://api.twitter.com/2/tweets/search/stream";
     private final static String CONTENT_TYPE = "Content-type: application/json";
     private final static String BEARER = "Authorization: Bearer ";
 
