@@ -2,5 +2,9 @@
   {
     "value": "cat",
     "tag": "cats"
+  },
+  {
+    "value": "dog",
+    "tag": "dogs"
   }
 ]

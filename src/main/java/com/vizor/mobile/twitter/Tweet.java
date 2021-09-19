@@ -17,4 +17,6 @@ public interface Tweet
      * Список правил, под которые подпадает этот твит.
      */
     List<Rule> getMatchingRules();
+
+    void setMatchingRules(List<Rule> matchingRules);
 }

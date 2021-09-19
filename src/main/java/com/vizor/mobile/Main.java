@@ -52,6 +52,7 @@ public class Main
             Type type = new TypeToken<List<ConfigRule>>(){}.getType();
             InputStreamReader reader = new InputStreamReader(checkNotNull(rulesStream, "Can't find /rules.json"));
             rules = new Gson().fromJson(reader, type);
+            System.out.println(rules);
         }
         catch (IOException e)
         {
