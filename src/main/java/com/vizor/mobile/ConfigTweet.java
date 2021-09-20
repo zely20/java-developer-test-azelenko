@@ -6,6 +6,7 @@ import com.vizor.mobile.twitter.Tweet;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class ConfigTweet implements Tweet {
     private String text;
@@ -36,5 +37,18 @@ public class ConfigTweet implements Tweet {
 
     public void setMatchingRules(List<Rule> matchingRules) {
         this.matchingRules = matchingRules;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ConfigTweet tweet = (ConfigTweet) o;
+        return Objects.equals(text, tweet.text) && Objects.equals(matchingRules, tweet.matchingRules);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(text, matchingRules);
     }
 }
