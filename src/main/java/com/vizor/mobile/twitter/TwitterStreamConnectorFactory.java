@@ -7,6 +7,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import com.vizor.mobile.ConfigRule;
 import com.vizor.mobile.ConfigTweet;
+import com.vizor.mobile.ParserJson;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,7 @@ public class TwitterStreamConnectorFactory {
     private final static String URL_RULES = "https://api.twitter.com/2/tweets/search/stream/rules";
     private final static String URL_GET_TOKEN = "https://api.twitter.com/oauth2/token?grant_type=client_credentials";
     private static final Logger LOG = LoggerFactory.getLogger(TwitterStreamConnectorFactory.class);
+    private ParserJson parserJson = new ParserJson();
     private String token = null;
 
     public TwitterStreamConnector createConnector(String apiKey, String secretKey) throws IOException {
@@ -40,15 +42,19 @@ public class TwitterStreamConnectorFactory {
                     token = getBearerToken(apiKey, secretKey);
                 }
                 String resultStatusRules = actionMethodGET(token, URL_RULES);
-                if (resultStatusRules.contains("result_count\": 0")) {
-                    String jsonRules = new Gson().toJson(ruleList);
-                    jsonRules = "{\"add\": " + jsonRules + " }";
-                    System.out.println(jsonRules);
-                    String responseRules = actionMethodPostWithJson(URL_RULES, token, jsonRules);
+                int countRules = -1;
+                    countRules = parserJson.parseJsonResultStatusRules(resultStatusRules);
+                    String addRulesRequestJson = parserJson.parseToCreateAddRulesRequest(ruleList);
+                if (countRules == 0) {
+                    String responseRules = actionMethodPostWithJson(URL_RULES, token, addRulesRequestJson);
                     System.out.println(responseRules);
+                }else {
+                    String responseDelete = parserJson.parseToDeleteRulesRequest(resultStatusRules);
+                    String responseDeleted = actionMethodPostWithJson(URL_RULES, token, responseDelete);
+                    String responseRules = actionMethodPostWithJson(URL_RULES, token, addRulesRequestJson);
                 }
                 System.out.println(resultStatusRules);
-                getStream(token, streamConsumer);
+                getStream(token, null);
             }
         };
     }
@@ -64,7 +70,6 @@ public class TwitterStreamConnectorFactory {
             httpURLConnection.setRequestProperty("Content-Type", "application/json; utf-8");
             httpURLConnection.setRequestProperty("Accept", "application/json");
             httpURLConnection.setConnectTimeout(200);
-            httpURLConnection.setReadTimeout(200);
             String auth = apiKey + ":" + secretKey;
             byte[] encodedAuth = Base64.getEncoder().encode(auth.getBytes(StandardCharsets.UTF_8));
             String authHeaderValue = "Basic " + new String(encodedAuth);
@@ -103,7 +108,7 @@ public class TwitterStreamConnectorFactory {
             httpURLConnection.setRequestProperty("Authorization", authHeaderValue);
             httpURLConnection.connect();
             try (InputStreamReader inputStream = new InputStreamReader(httpURLConnection.getInputStream());
-                 BufferedReader bufferedReader = new BufferedReader(inputStream)){
+                 BufferedReader bufferedReader = new BufferedReader(inputStream)) {
                 if (httpURLConnection.HTTP_OK == httpURLConnection.getResponseCode()) {
                     String line;
                     while ((line = bufferedReader.readLine()) != null) {
@@ -137,7 +142,7 @@ public class TwitterStreamConnectorFactory {
             httpURLConnection.connect();
 
             try (InputStreamReader inputStream = new InputStreamReader(httpURLConnection.getInputStream());
-                 BufferedReader bufferedReader = new BufferedReader(inputStream)){
+                 BufferedReader bufferedReader = new BufferedReader(inputStream)) {
                 if (httpURLConnection.HTTP_OK == httpURLConnection.getResponseCode()) {
                     String line;
                     while ((line = bufferedReader.readLine()) != null) {
@@ -169,16 +174,15 @@ public class TwitterStreamConnectorFactory {
             String authHeaderValue = "Bearer " + token;
             httpURLConnection.setRequestProperty("Authorization", authHeaderValue);
             httpURLConnection.connect();
-            String jsonInputString = json;
-
             try (OutputStream os = httpURLConnection.getOutputStream()) {
-                byte[] input = jsonInputString.getBytes("utf-8");
+                byte[] input = json.getBytes("utf-8");
                 os.write(input, 0, input.length);
             }
-
+            System.out.println(httpURLConnection.getResponseCode());
             try (InputStreamReader inputStream = new InputStreamReader(httpURLConnection.getInputStream());
                  BufferedReader bufferedReader = new BufferedReader(inputStream)) {
-                if (httpURLConnection.HTTP_OK == httpURLConnection.getResponseCode()) {
+                System.out.println(httpURLConnection.getResponseCode());
+                if (httpURLConnection.HTTP_OK == httpURLConnection.getResponseCode() || httpURLConnection.HTTP_CREATED == httpURLConnection.getResponseCode()) {
                     String line;
                     while ((line = bufferedReader.readLine()) != null) {
                         builder.append(line);
