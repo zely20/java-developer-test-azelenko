@@ -1,11 +1,14 @@
 package com.vizor.mobile;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import com.vizor.mobile.twitter.Rule;
+import com.vizor.mobile.twitter.Tweet;
 
 import java.lang.reflect.Type;
 import java.util.List;
@@ -48,5 +51,19 @@ public class ParserJson {
         jsonRequestDelete.add("delete", jsonRequestIds);
         String result = new Gson().toJson(jsonRequestDelete);
         return result;
+    }
+
+    public Tweet parsingResponseJsonToTweet(String line) {
+        System.out.println("from parser " + line);
+        JsonElement jsonObjectTweet = JsonParser.parseString(line).getAsJsonObject().get("data");
+        JsonElement jsonObjectRules = JsonParser.parseString(line).getAsJsonObject().get("matching_rules");
+        GsonBuilder builder = new GsonBuilder();
+        Gson gson = builder.create();
+        Type type = new TypeToken<List<ConfigRule>>() {
+        }.getType();
+        Tweet tweet = gson.fromJson(jsonObjectTweet, ConfigTweet.class);
+        List<Rule> rules = new Gson().fromJson(jsonObjectRules, type);
+        tweet.setMatchingRules(rules);
+        return tweet;
     }
 }

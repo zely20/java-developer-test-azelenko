@@ -65,6 +65,14 @@ public class PrometheusTweetAggregator implements TweetAggregator
     @Override
     public void aggregateTweet(Tweet tweet)
     {
-        throw new UnsupportedOperationException("Unimplemented");
+        if(tweet != null) {
+            tweetsTotal.inc();
+            Histogram.Timer requestTweetsLengthWords = tweetsLengthWords.labels(tweet.getMatchingRules().get(0).getTag()).startTimer();
+            try {
+                TextUtils.wordCount(tweet.getText());
+            } finally {
+                requestTweetsLengthWords.observeDuration();
+            }
+        }
     }
 }

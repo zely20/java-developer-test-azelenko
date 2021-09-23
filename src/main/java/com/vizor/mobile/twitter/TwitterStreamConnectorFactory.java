@@ -1,12 +1,5 @@
 package com.vizor.mobile.twitter;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
-import com.google.gson.reflect.TypeToken;
-import com.vizor.mobile.ConfigRule;
-import com.vizor.mobile.ConfigTweet;
 import com.vizor.mobile.ParserJson;
 
 import org.slf4j.Logger;
@@ -16,7 +9,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -47,14 +39,13 @@ public class TwitterStreamConnectorFactory {
                     String addRulesRequestJson = parserJson.parseToCreateAddRulesRequest(ruleList);
                 if (countRules == 0) {
                     String responseRules = actionMethodPostWithJson(URL_RULES, token, addRulesRequestJson);
-                    System.out.println(responseRules);
                 }else {
                     String responseDelete = parserJson.parseToDeleteRulesRequest(resultStatusRules);
                     String responseDeleted = actionMethodPostWithJson(URL_RULES, token, responseDelete);
                     String responseRules = actionMethodPostWithJson(URL_RULES, token, addRulesRequestJson);
                 }
                 System.out.println(resultStatusRules);
-                getStream(token, null);
+                getStream(token, streamConsumer);
             }
         };
     }
@@ -112,9 +103,12 @@ public class TwitterStreamConnectorFactory {
                 if (httpURLConnection.HTTP_OK == httpURLConnection.getResponseCode()) {
                     String line;
                     while ((line = bufferedReader.readLine()) != null) {
-                        Tweet tweet = parsingResponseJsonToTweet(line);
-                        System.out.println(tweet);
-                        streamConsumer.accept(tweet);
+                        if(!line.equals("")) {
+                            System.out.println(line);
+                            Tweet tweet = parserJson.parsingResponseJsonToTweet(line);
+                            System.out.println(tweet);
+                            streamConsumer.accept(tweet);
+                        }
                     }
                 }
             } catch (IOException e) {
@@ -178,10 +172,8 @@ public class TwitterStreamConnectorFactory {
                 byte[] input = json.getBytes("utf-8");
                 os.write(input, 0, input.length);
             }
-            System.out.println(httpURLConnection.getResponseCode());
             try (InputStreamReader inputStream = new InputStreamReader(httpURLConnection.getInputStream());
                  BufferedReader bufferedReader = new BufferedReader(inputStream)) {
-                System.out.println(httpURLConnection.getResponseCode());
                 if (httpURLConnection.HTTP_OK == httpURLConnection.getResponseCode() || httpURLConnection.HTTP_CREATED == httpURLConnection.getResponseCode()) {
                     String line;
                     while ((line = bufferedReader.readLine()) != null) {
@@ -189,26 +181,13 @@ public class TwitterStreamConnectorFactory {
                     }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                LOG.error(e.getMessage(), e);
             } finally {
                 httpURLConnection.disconnect();
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error(e.getMessage(), e);
         }
         return builder.toString();
-    }
-
-    private Tweet parsingResponseJsonToTweet(String line) {
-        JsonElement jsonObjectTweet = JsonParser.parseString(line).getAsJsonObject().get("data");
-        JsonElement jsonObjectRules = JsonParser.parseString(line).getAsJsonObject().get("matching_rules");
-        GsonBuilder builder = new GsonBuilder();
-        Gson gson = builder.create();
-        Type type = new TypeToken<List<ConfigRule>>() {
-        }.getType();
-        Tweet tweet = gson.fromJson(jsonObjectTweet, ConfigTweet.class);
-        List<Rule> rules = new Gson().fromJson(jsonObjectRules, type);
-        tweet.setMatchingRules(rules);
-        return tweet;
     }
 }
