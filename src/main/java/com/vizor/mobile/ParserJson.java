@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 public class ParserJson {
 
     public Integer parseJsonResultStatusRules(String resultStatusRules) {
-        if(resultStatusRules == null) {
+        if (resultStatusRules == null) {
             throw new NullPointerException("resultStatusRules is null");
         }
         JsonObject jsonObject = new Gson().fromJson(resultStatusRules, JsonObject.class);
@@ -26,9 +26,16 @@ public class ParserJson {
         return count.getAsInt();
     }
 
+    public String parseGetToken(String secret) {
+        JsonObject jsonObject = new Gson().fromJson(secret, JsonObject.class);
+        JsonElement jsonElement = jsonObject.get("access_token");
+        return jsonElement.getAsString();
+    }
+
     public String parseToCreateAddRulesRequest(List<Rule> rules) {
         JsonObject jsonObject = new JsonObject();
-        JsonElement element = new Gson().toJsonTree(rules, new TypeToken<List<Rule>>() {}.getType());
+        JsonElement element = new Gson().toJsonTree(rules, new TypeToken<List<Rule>>() {
+        }.getType());
         JsonArray requestArray = element.getAsJsonArray();
         jsonObject.add("add", requestArray);
         return new Gson().toJson(jsonObject);
@@ -38,14 +45,16 @@ public class ParserJson {
         JsonObject jsonRequestIds = new JsonObject();
         JsonObject jsonRequestDelete = new JsonObject();
 
-        Type type = new TypeToken<List<ConfigRule>>(){}.getType();
+        Type type = new TypeToken<List<ConfigRule>>() {
+        }.getType();
         JsonObject jsonObject = new Gson().fromJson(dataRules, JsonObject.class);
         JsonArray jsonRules = jsonObject.getAsJsonArray("data");
-        List<Rule> rules = new Gson().fromJson(jsonRules,type);
+        List<Rule> rules = new Gson().fromJson(jsonRules, type);
         List<String> jsonListRules = rules.stream()
                 .map(rule -> rule.getId().get())
-                        .collect(Collectors.toList());
-        JsonElement element = new Gson().toJsonTree(jsonListRules, new TypeToken<List<String>>() {}.getType());
+                .collect(Collectors.toList());
+        JsonElement element = new Gson().toJsonTree(jsonListRules, new TypeToken<List<String>>() {
+        }.getType());
         JsonArray requestArray = element.getAsJsonArray();
         jsonRequestIds.add("ids", requestArray);
         jsonRequestDelete.add("delete", jsonRequestIds);

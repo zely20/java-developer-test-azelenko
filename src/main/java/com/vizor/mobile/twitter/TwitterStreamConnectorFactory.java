@@ -21,30 +21,33 @@ public class TwitterStreamConnectorFactory {
     private final static String URL_STREAM = "https://api.twitter.com/2/tweets/search/stream";
     private final static String URL_RULES = "https://api.twitter.com/2/tweets/search/stream/rules";
     private final static String URL_GET_TOKEN = "https://api.twitter.com/oauth2/token?grant_type=client_credentials";
+    private final static String BASIC = "Basic ";
+    private final static String BEARER = "Bearer ";
     private static final Logger LOG = LoggerFactory.getLogger(TwitterStreamConnectorFactory.class);
     private ParserJson parserJson = new ParserJson();
     private String token = null;
+    private ControllerTweet controllerTweet = new ControllerTweet();
 
     public TwitterStreamConnector createConnector(String apiKey, String secretKey) throws IOException {
-
         return new TwitterStreamConnector() {
             @Override
             public void listenStream(List<Rule> ruleList, Consumer<Tweet> streamConsumer) throws IOException, InterruptedException {
                 if (token == null) {
-                    token = getBearerToken(apiKey, secretKey);
+                    token = controllerTweet.postRequest(URL_GET_TOKEN, BASIC,
+                            getEncodeSecret(apiKey,secretKey), null);
+                    token = parserJson.parseGetToken(token);
                 }
                 String resultStatusRules = actionMethodGET(token, URL_RULES);
                 int countRules = -1;
                     countRules = parserJson.parseJsonResultStatusRules(resultStatusRules);
                     String addRulesRequestJson = parserJson.parseToCreateAddRulesRequest(ruleList);
                 if (countRules == 0) {
-                    String responseRules = actionMethodPostWithJson(URL_RULES, token, addRulesRequestJson);
+                    controllerTweet.postRequest(URL_RULES, BEARER, token, addRulesRequestJson);
                 }else {
                     String responseDelete = parserJson.parseToDeleteRulesRequest(resultStatusRules);
-                    String responseDeleted = actionMethodPostWithJson(URL_RULES, token, responseDelete);
-                    String responseRules = actionMethodPostWithJson(URL_RULES, token, addRulesRequestJson);
+                    controllerTweet.postRequest(URL_RULES, BEARER, token, responseDelete);
+                    controllerTweet.postRequest(URL_RULES, BEARER, token, addRulesRequestJson);
                 }
-                System.out.println(resultStatusRules);
                 getStream(token, streamConsumer);
             }
         };
@@ -134,7 +137,6 @@ public class TwitterStreamConnectorFactory {
             String authHeaderValue = "Bearer " + token;
             httpURLConnection.setRequestProperty("Authorization", authHeaderValue);
             httpURLConnection.connect();
-
             try (InputStreamReader inputStream = new InputStreamReader(httpURLConnection.getInputStream());
                  BufferedReader bufferedReader = new BufferedReader(inputStream)) {
                 if (httpURLConnection.HTTP_OK == httpURLConnection.getResponseCode()) {
@@ -189,5 +191,11 @@ public class TwitterStreamConnectorFactory {
             LOG.error(e.getMessage(), e);
         }
         return builder.toString();
+    }
+
+    private String getEncodeSecret(String apiKey, String secretKey) {
+        String auth = apiKey + ":" + secretKey;
+        byte[] encodedAuth = Base64.getEncoder().encode(auth.getBytes(StandardCharsets.UTF_8));
+        return new String(encodedAuth);
     }
 }

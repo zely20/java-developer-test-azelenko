@@ -20,5 +20,10 @@ class TextUtilsTest
         assertEquals(3, TextUtils.wordCount("Word123 123 Word"));
         assertEquals(3, TextUtils.wordCount("Word123 123 Word "));
         assertEquals(1, TextUtils.wordCount("three-part-word"));
+
+        assertEquals(14, TextUtils.charCount("Word123 123 Word "));
+        assertEquals(8, TextUtils.charCount("word  word"));
+        assertEquals(8, TextUtils.charCount("word word"));
+        assertEquals(9, TextUtils.charCount("word , word"));
     }
 }

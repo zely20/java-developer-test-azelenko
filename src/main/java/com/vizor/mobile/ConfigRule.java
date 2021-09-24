@@ -7,9 +7,9 @@ import java.util.Optional;
 
 public class ConfigRule implements Rule {
 
-    private String id = null;
-    private String value = null;
-    private String tag = null;
+    private String id;
+    private String value;
+    private String tag;
 
     public ConfigRule() {
     }

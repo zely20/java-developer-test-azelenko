@@ -2,15 +2,16 @@ package com.vizor.mobile.aggregator;
 
 import com.vizor.mobile.twitter.Rule;
 import com.vizor.mobile.twitter.Tweet;
+
 import io.prometheus.client.Counter;
 import io.prometheus.client.Histogram;
 
 /**
  * Собирает информацию о полученных твитах в Prometheus метрики.
- *
+ * <p>
  * Часть метрик маркируется тэгом, ассоциированным с совпавшим с твитом {@link Rule#getTag()}. Для таких метрик считаем,
  * что если твит подпадает под несколько правил сразу, то обновляем метрики на каждое совпавшее правило.
- *
+ * <p>
  * Класс создает и настраивает несколько стандартных метрик:
  * <ul>
  *     <li>twitter_stream_tweet_count_total -- количество обработанных твитов. Счетчик, подсчитываем вне зависимости
@@ -19,12 +20,11 @@ import io.prometheus.client.Histogram;
  *     рамках тэга</li>
  *     <li>twitter_stream_tweet_length_words -- количество слов в твите. Гистограмма, подсчитываем в рамках тэга</li>
  * </ul>
- *
+ * <p>
  * Для метрики twitter_stream_tweet_count_total значение должно совпадать с количеством вызовов метода
  * {@link PrometheusTweetAggregator#aggregateTweet(Tweet)}.
  */
-public class PrometheusTweetAggregator implements TweetAggregator
-{
+public class PrometheusTweetAggregator implements TweetAggregator {
     /**
      * Метрика, показывающая количество обработанных {@link Tweet}
      */
@@ -39,39 +39,41 @@ public class PrometheusTweetAggregator implements TweetAggregator
      */
     private final Histogram tweetsLengthWords;
 
-    PrometheusTweetAggregator()
-    {
+    PrometheusTweetAggregator() {
         tweetsTotal = Counter.build()
-                              .help("Total tweets processed by topic")
-                              .namespace("twitter_stream")
-                              .name("tweet_count_total")
-                              .create().register();
+                .help("Total tweets processed by topic")
+                .namespace("twitter_stream")
+                .name("tweet_count_total")
+                .create().register();
 
         tweetsLengthCharacters = Histogram.build()
-                                         .help("Total tweets in characters by topic")
-                                         .namespace("twitter_stream")
-                                         .name("tweet_length_characters")
-                                         .labelNames("tag")
-                                         .create().register();
+                .help("Total tweets in characters by topic")
+                .namespace("twitter_stream")
+                .name("tweet_length_characters")
+                .labelNames("tag")
+                .create().register();
 
         tweetsLengthWords = Histogram.build()
-                                    .help("Tweet length in words by topic")
-                                    .namespace("twitter_stream")
-                                    .name("tweet_length_words")
-                                    .labelNames("tag")
-                                    .create().register();
+                .help("Tweet length in words by topic")
+                .namespace("twitter_stream")
+                .name("tweet_length_words")
+                .labelNames("tag")
+                .create().register();
     }
 
     @Override
-    public void aggregateTweet(Tweet tweet)
-    {
-        if(tweet != null) {
+    public void aggregateTweet(Tweet tweet) {
+        if (tweet != null) {
             tweetsTotal.inc();
-            Histogram.Timer requestTweetsLengthWords = tweetsLengthWords.labels(tweet.getMatchingRules().get(0).getTag()).startTimer();
-            try {
-                TextUtils.wordCount(tweet.getText());
-            } finally {
-                requestTweetsLengthWords.observeDuration();
+            for (Rule rule : tweet.getMatchingRules()) {
+                try (Histogram.Timer requestTweetsLengthWords = tweetsLengthWords.labels(rule.getTag()).startTimer()) {
+                    System.out.println(TextUtils.wordCount(tweet.getText()));
+                    tweetsLengthWords.labels(rule.getTag()).observe(TextUtils.wordCount(tweet.getText()));
+                }
+                try (Histogram.Timer requestTweetsLengthChar = tweetsLengthCharacters.labels(rule.getTag()).startTimer()) {
+                    System.out.println(TextUtils.charCount(tweet.getText()));
+                    tweetsLengthCharacters.labels(rule.getTag()).observe(TextUtils.charCount(tweet.getText()));
+                }
             }
         }
     }

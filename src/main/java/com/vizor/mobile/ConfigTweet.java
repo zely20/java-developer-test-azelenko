@@ -10,7 +10,6 @@ import java.util.Objects;
 
 public class ConfigTweet implements Tweet {
     private String text;
-    @SerializedName(value = "matching_rules")
     private List<Rule> matchingRules = new ArrayList<>();
 
     @Override
