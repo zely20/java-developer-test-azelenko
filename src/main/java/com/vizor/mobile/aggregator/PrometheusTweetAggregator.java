@@ -67,11 +67,9 @@ public class PrometheusTweetAggregator implements TweetAggregator {
             tweetsTotal.inc();
             for (Rule rule : tweet.getMatchingRules()) {
                 try (Histogram.Timer requestTweetsLengthWords = tweetsLengthWords.labels(rule.getTag()).startTimer()) {
-                    System.out.println(TextUtils.wordCount(tweet.getText()));
                     tweetsLengthWords.labels(rule.getTag()).observe(TextUtils.wordCount(tweet.getText()));
                 }
                 try (Histogram.Timer requestTweetsLengthChar = tweetsLengthCharacters.labels(rule.getTag()).startTimer()) {
-                    System.out.println(TextUtils.charCount(tweet.getText()));
                     tweetsLengthCharacters.labels(rule.getTag()).observe(TextUtils.charCount(tweet.getText()));
                 }
             }

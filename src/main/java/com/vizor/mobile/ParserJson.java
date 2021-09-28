@@ -44,7 +44,6 @@ public class ParserJson {
     public String parseToDeleteRulesRequest(String dataRules) {
         JsonObject jsonRequestIds = new JsonObject();
         JsonObject jsonRequestDelete = new JsonObject();
-
         Type type = new TypeToken<List<ConfigRule>>() {
         }.getType();
         JsonObject jsonObject = new Gson().fromJson(dataRules, JsonObject.class);
@@ -63,7 +62,6 @@ public class ParserJson {
     }
 
     public Tweet parsingResponseJsonToTweet(String line) {
-        System.out.println("from parser " + line);
         JsonElement jsonObjectTweet = JsonParser.parseString(line).getAsJsonObject().get("data");
         JsonElement jsonObjectRules = JsonParser.parseString(line).getAsJsonObject().get("matching_rules");
         GsonBuilder builder = new GsonBuilder();
