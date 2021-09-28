@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class ConfigTweet implements Tweet {
+
     private String text;
     private List<Rule> matchingRules = new ArrayList<>();
 
@@ -30,10 +31,12 @@ public class ConfigTweet implements Tweet {
         return matchingRules;
     }
 
+    @Override
     public void setText(String text) {
         this.text = text;
     }
 
+    @Override
     public void setMatchingRules(List<Rule> matchingRules) {
         this.matchingRules = matchingRules;
     }

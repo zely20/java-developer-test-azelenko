@@ -19,4 +19,6 @@ public interface Tweet
     List<Rule> getMatchingRules();
 
     void setMatchingRules(List<Rule> matchingRules);
+    void setText(String text);
+
 }
